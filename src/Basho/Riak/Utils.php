@@ -117,9 +117,11 @@ class Utils
      * @param string $index - Index Name & type (eg, "indexName_bin")
      * @param string|int $start - Starting value or exact match if no ending value
      * @param string|int $end - Ending value for range search
+     * @param string|bool optional $returnTerms - Retrieve the matched index values alongside the Riak keys
+     * @param string|int optional $maxResults - The number of results you'd like to receive
      * @return string URL
      */
-    public static function buildIndexPath(Riak $client, Bucket $bucket, $index, $start, $end = NULL)
+    public static function buildIndexPath(Riak $client, Bucket $bucket, $index, $start, $end = NULL, $returnTerms = NULL, $maxResults = NULL)
     {
         # Build 'http://hostname:port/prefix/bucket'
         $path = array('http:/', $client->host . ':' . $client->port, $client->indexPrefix);
@@ -142,6 +144,21 @@ class Utils
 
         // faster than repeated string concatenations
         $path = join('/', $path);
+
+		// add support for max results and return terms
+		$query = array();
+
+		if (!is_null($returnTerms)) {
+			$query['return_terms'] = $returnTerms;
+		}
+
+		if (!is_null($maxResults)) {
+			$query['max_results'] = $maxResults;
+		}
+
+		if (!empty($query)) {
+			$path .= '?' . http_build_query($query);
+		}
 
         return $path;
     }
