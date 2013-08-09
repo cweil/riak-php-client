@@ -376,22 +376,34 @@ class Bucket
      * @param string|int $startOrExact
      * @param string|int optional $end
      * @param bool optional $dedupe - whether to eliminate duplicate entries if any
-	 * @param string|bool optional $returnTerms - Retrieve the matched index values alongside the Riak keys
-	 * @param string|int optional $maxResults - The number of results you'd like to receive
+     * @param string|bool optional $returnTerms - Retrieve the matched index values alongside the Riak keys
+     * @param string|int optional $maxResults - The number of results you'd like to receive
+     * @param string|bin optional $continue - The continuation for the current set of $maxResults, omit for first
+     * @param string|bin optional &$continueNext - The continuation for the next set of $maxResults, ref var
      * @return array of Links
      */
-    public function indexSearch($indexName, $indexType, $startOrExact, $end = NULL, $dedupe = false, $returnTerms = NULL, $maxResults = NULL)
+    public function indexSearch($indexName, $indexType, $startOrExact, $end = NULL, $dedupe = false, 
+    $returnTerms = NULL, $maxResults = NULL, $continue = NULL, &$continueNext = NULL)
     {
-        $url = Utils::buildIndexPath($this->client, $this, "{$indexName}_{$indexType}", $startOrExact, $end, $returnTerms, $maxResults);
-        $response = Utils::httpRequest('GET', $url);
+        $url = Utils::buildIndexPath($this->client, $this, "{$indexName}_{$indexType}", $startOrExact, $end,
+        $returnTerms, $maxResults, $continue);
 
+        $response = Utils::httpRequest('GET', $url);
         $obj = new Object($this->client, $this, NULL);
 
         $obj->populate($response, array(200));
         if (!$obj->exists()) {
             throw new Exception("Error searching index.");
         }
+
         $data = $obj->getData();
+
+        if (array_key_exists('continuation', $data)) {
+            $continueNext = urldecode($data['continuation']);
+        } else {
+            $continueNext = NULL;
+		}
+
         $keys = array_map("urldecode", $data["keys"]);
 
         $seenKeys = array();
