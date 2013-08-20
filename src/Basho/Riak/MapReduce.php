@@ -384,12 +384,16 @@ class MapReduce
         # Otherwise, if the last phase IS a link phase, then convert the
         # results to Link objects.
         $a = array();
-        foreach ($result as $r) {
-            $tag = isset($r[2]) ? $r[2] : null;
-            $link = new Link($r[0], $r[1], $tag);
-            $link->client = $this->client;
-            $a[] = $link;
+
+        if (!is_null($result)) {
+            foreach ($result as $r) {
+                $tag = isset($r[2]) ? $r[2] : null;
+                $link = new Link($r[0], $r[1], $tag);
+                $link->client = $this->client;
+                $a[] = $link;
+            }
         }
+
         return $a;
     }
 }
